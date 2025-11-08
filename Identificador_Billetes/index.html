@@ -333,7 +333,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
-    <script>
+    <script type="text/javascript">
+        
         /* ========================================
            JAVASCRIPT - LÓGICA DE LA APLICACIÓN
            ======================================== */
@@ -344,7 +345,10 @@
         
         // 🔧 CONFIGURA AQUÍ LA URL DE TU MODELO
         // Reemplaza con la URL que obtuviste de Teachable Machine
+
         const MODEL_URL = "https://teachablemachine.withgoogle.com/models/MUYTKlVDr/";
+        const modelURL = MODEL_URL + "model.json";
+        const metadataURL = MODEL_URL + "metadata.json";
         
         // Variables globales
         let model, webcam, maxPredictions;
@@ -352,6 +356,9 @@
         let predictionInterval = null;
         let lastPrediction = null;
         let lastAnnouncement = 0;
+
+        async function init() {
+     model = await tmImage.load(modelURL, metadataURL);
 
         // ============================================
         // PASO 2: FUNCIÓN DE SÍNTESIS DE VOZ
@@ -690,6 +697,6 @@
         console.log('   Debes reemplazar MODEL_URL con la URL de tu modelo');
         console.log('   URL actual:', MODEL_URL);
         console.log('='.repeat(50));
-    </script>
+    </>
 </body>
 </html>
