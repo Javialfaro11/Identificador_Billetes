@@ -63,6 +63,7 @@
   <div id="statusIndicator" class="status">Cámara inactiva</div>
 
   <script type="text/javascript">
+    // URL pública del modelo de Teachable Machine
     const MODEL_URL = "https://teachablemachine.withgoogle.com/models/MUYTKlVDr/";
     const modelURL = MODEL_URL + "model.json";
     const metadataURL = MODEL_URL + "metadata.json";
@@ -104,13 +105,18 @@
 
         speak("Cámara iniciada. Coloca el billete frente a la cámara.");
         isRunning = true;
-        window.requestAnimationFrame(loop);
+
+        // Pequeño retardo para asegurar que la cámara esté lista antes de predecir
+        setTimeout(() => {
+          window.requestAnimationFrame(loop);
+        }, 1000);
 
       } catch (error) {
         console.error("Error al inicializar:", error);
-        alert("No se pudo acceder a la cámara o cargar el modelo.");
+        alert("No se pudo acceder a la cámara o cargar el modelo. Revisa los permisos del navegador.");
         speak("Error al iniciar la cámara o el modelo.");
         document.getElementById('startBtn').disabled = false;
+        document.getElementById('loadingStatus').style.display = 'none';
       }
     }
 
