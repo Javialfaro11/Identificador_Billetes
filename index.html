@@ -261,6 +261,9 @@
     </style>
 </head>
 <body>
+    <button type="button" onclick="init()">Iniciar cámara</button>
+    <div id="webcam-container"></div>
+    <div id="label-container"></div>
     <div class="container">
         <!-- Título -->
         <h1>💵 Identificador de Billetes</h1>
@@ -333,7 +336,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
-    <script>
+    <script type="text/javascript">
         /* ========================================
            JAVASCRIPT - LÓGICA DE LA APLICACIÓN
            ======================================== */
@@ -344,19 +347,45 @@
         
         // 🔧 CONFIGURA AQUÍ LA URL DE TU MODELO
         // Reemplaza con la URL que obtuviste de Teachable Machine
+        
         const MODEL_URL = "https://teachablemachine.withgoogle.com/models/MUYTKlVDr/";
         const modelURL = MODEL_URL + "model.json";
         const metadataURL = MODEL_URL + "metadata.json";
         
         // Variables globales
-        let model, webcam, maxPredictions;
-        let isRunning = false;
-        let predictionInterval = null;
-        let lastPrediction = null;
-        let lastAnnouncement = 0;
-
+        let model, webcam, labelContainer, maxPredictions;
         async function init() {
-         model = await tmImage.load(modelURL, metadataURL);
+  const flip = true; // invierte la cámara horizontalmente
+  model = await tmImage.load(modelURL, metadataURL);
+  maxPredictions = model.getTotalClasses();
+
+  const size = 300;
+  webcam = new tmImage.Webcam(size, size, flip); // crea el objeto webcam
+  await webcam.setup(); // solicita permisos
+  await webcam.play();
+  window.requestAnimationFrame(loop);
+
+  document.getElementById("webcam-container").appendChild(webcam.canvas);
+  labelContainer = document.getElementById("label-container");
+  for (let i = 0; i < maxPredictions; i++) {
+    labelContainer.appendChild(document.createElement("div"));
+  }
+}
+
+async function loop() {
+  webcam.update();
+  await predict();
+  window.requestAnimationFrame(loop);
+}
+
+async function predict() {
+  const prediction = await model.predict(webcam.canvas);
+  for (let i = 0; i < maxPredictions; i++) {
+    const classPrediction =
+      prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+    labelContainer.childNodes[i].innerHTML = classPrediction;
+  }
+}
 
         // ============================================
         // PASO 2: FUNCIÓN DE SÍNTESIS DE VOZ
