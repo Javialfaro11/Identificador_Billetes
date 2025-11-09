@@ -1,701 +1,122 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Identificador de Billetes - Accesibilidad</title>
-    
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Identificador de Billetes</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
     <style>
-        /* ========================================
-           ESTILOS CSS - Apariencia Visual
-           ======================================== */
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 0;
+        background-color: #f4f4f4;
+      }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+      #container {
+        margin: 20px auto;
+        width: 90%;
+        max-width: 400px;
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
 
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 900px;
-            width: 100%;
-            padding: 40px;
-        }
+      video {
+        width: 100%;
+        border-radius: 10px;
+      }
 
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 10px;
-            font-size: 2.2em;
-        }
+      button {
+        padding: 10px 20px;
+        margin: 10px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        background-color: #4caf50;
+        color: white;
+      }
 
-        .subtitle {
-            color: #666;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-
-        /* Sección de cámara */
-        .camera-section {
-            position: relative;
-            background: #000;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 30px;
-            min-height: 480px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #webcam {
-            width: 100%;
-            height: auto;
-            border-radius: 15px;
-        }
-
-        .placeholder {
-            color: #999;
-            font-size: 1.3em;
-            text-align: center;
-            padding: 40px;
-        }
-
-        /* Sección de resultado */
-        .result-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 25px;
-            min-height: 140px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
-
-        .result-text {
-            font-size: 2.5em;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .confidence {
-            font-size: 1.4em;
-            opacity: 0.9;
-        }
-
-        .waiting-text {
-            color: rgba(255,255,255,0.8);
-            font-size: 1.2em;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.4);
-            margin-right: 10px;
-            animation: pulse 2s infinite;
-        }
-
-        .status-indicator.active {
-            background: #4ade80;
-            box-shadow: 0 0 10px #4ade80;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        /* Controles */
-        .controls {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 25px;
-        }
-
-        button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 18px 35px;
-            font-size: 1.1em;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            min-width: 200px;
-        }
-
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-        }
-
-        button:active:not(:disabled) {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        .btn-start {
-            background: #10b981;
-        }
-
-        .btn-start:hover:not(:disabled) {
-            background: #059669;
-        }
-
-        .btn-stop {
-            background: #ef4444;
-        }
-
-        .btn-stop:hover:not(:disabled) {
-            background: #dc2626;
-        }
-
-        /* Instrucciones */
-        .instructions {
-            background: #f0f9ff;
-            border-left: 4px solid #3b82f6;
-            padding: 25px;
-            border-radius: 10px;
-            margin-top: 25px;
-        }
-
-        .instructions h3 {
-            color: #1e40af;
-            margin-bottom: 15px;
-            font-size: 1.3em;
-        }
-
-        .instructions ol {
-            color: #1e3a8a;
-            margin-left: 25px;
-        }
-
-        .instructions li {
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }
-
-        .instructions strong {
-            color: #1e40af;
-        }
-
-        /* Estado de carga */
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-            font-size: 1.1em;
-        }
-
-        .loading::after {
-            content: '...';
-            animation: dots 1.5s steps(4, end) infinite;
-        }
-
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
-        }
-
-        /* Footer */
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #e5e7eb;
-            text-align: center;
-            color: #6b7280;
-            font-size: 0.9em;
-        }
-
-        /* Responsive */
-        @media (max-width: 600px) {
-            .container {
-                padding: 20px;
-            }
-            
-            h1 {
-                font-size: 1.8em;
-            }
-            
-            button {
-                min-width: 160px;
-                padding: 15px 25px;
-                font-size: 1em;
-            }
-            
-            .result-text {
-                font-size: 1.8em;
-            }
-        }
+      #label-container {
+        margin-top: 20px;
+        font-size: 20px;
+        font-weight: bold;
+      }
     </style>
-</head>
-<body>
-    <div class="container">
-        <!-- Título -->
-        <h1>💵 Identificador de Billetes</h1>
-        <p class="subtitle">Sistema de reconocimiento para personas con discapacidad visual</p>
+  </head>
 
-        <!-- Sección de cámara -->
-        <div class="camera-section">
-            <video id="webcam" autoplay playsinline style="display: none;"></video>
-            <div class="placeholder" id="placeholder">
-                <p>👆 Presiona "Iniciar Cámara" para comenzar</p>
-                <p style="font-size: 0.9em; margin-top: 15px; color: #666;">
-                    Asegúrate de permitir el acceso a la cámara cuando tu navegador lo solicite
-                </p>
-            </div>
-        </div>
-
-        <!-- Sección de resultado -->
-        <div class="result-section">
-            <div id="resultDisplay">
-                <p class="waiting-text">
-                    <span class="status-indicator" id="statusIndicator"></span>
-                    Esperando iniciar...
-                </p>
-            </div>
-        </div>
-
-        <!-- Controles -->
-        <div class="controls">
-            <button id="startBtn" class="btn-start" onclick="init()">
-                📷 Iniciar Cámara
-            </button>
-            <button id="stopBtn" class="btn-stop" onclick="stop()" disabled>
-                ⏹️ Detener
-            </button>
-        </div>
-
-        <!-- Estado de carga del modelo -->
-        <div id="loadingStatus" class="loading" style="display: none;">
-            Cargando modelo de inteligencia artificial
-        </div>
-
-        <!-- Instrucciones -->
-        <div class="instructions">
-            <h3>📋 Instrucciones de uso:</h3>
-            <ol>
-                <li><strong>Presiona "Iniciar Cámara"</strong> y permite el acceso cuando tu navegador lo solicite</li>
-                <li><strong>Coloca el billete</strong> frente a la cámara con buena iluminación</li>
-                <li><strong>Mantén el billete estable</strong> durante 1-2 segundos</li>
-                <li><strong>Escucha el resultado</strong> que se anunciará automáticamente por voz</li>
-                <li><strong>Consejos:</strong>
-                    <ul style="margin-top: 8px;">
-                        <li>Sostén el billete a 20-30 cm de la cámara</li>
-                        <li>Asegúrate de tener buena iluminación</li>
-                        <li>Evita sombras o reflejos intensos</li>
-                    </ul>
-                </li>
-            </ol>
-        </div>
-
-        <!-- Footer -->
-        <div class="footer">
-            <p><strong>⚠️ Importante:</strong> Debes reemplazar la URL del modelo con tu modelo entrenado.</p>
-            <p style="margin-top: 8px;">Proyecto educativo - Desarrollado para promover la accesibilidad</p>
-        </div>
+  <body>
+    <div id="container">
+      <h1>Identificador de Billetes</h1>
+      <video id="webcam" autoplay playsinline muted></video>
+      <div>
+        <button type="button" onclick="init()">Iniciar cámara</button>
+        <button type="button" onclick="stopCamera()">Detener cámara</button>
+      </div>
+      <div id="label-container"></div>
     </div>
 
-    <!-- ========================================
-         LIBRERÍAS DE TENSORFLOW Y TEACHABLE MACHINE
-         ======================================== -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script type="text/javascript">
+      const URL = "https://teachablemachine.withgoogle.com/models/axrfm5FxN/";
+      let model, webcamStream, labelContainer, maxPredictions;
 
-    <script>
-        /* ========================================
-           JAVASCRIPT - LÓGICA DE LA APLICACIÓN
-           ======================================== */
+      async function init() {
+        try {
+          const modelURL = URL + "model.json";
+          const metadataURL = URL + "metadata.json";
+          model = await tmImage.load(modelURL, metadataURL);
+          maxPredictions = model.getTotalClasses();
 
-        // ============================================
-        // PASO 1: CONFIGURACIÓN INICIAL
-        // ============================================
-        
-        // 🔧 CONFIGURA AQUÍ LA URL DE TU MODELO
-        // Reemplaza con la URL que obtuviste de Teachable Machine
-        const MODEL_URL = "https://teachablemachine.withgoogle.com/models/MUYTKlVDr/";
-        const modelURL = MODEL_URL + "model.json";
-        const metadataURL = MODEL_URL + "metadata.json";
-        
-        // Variables globales
-        let model, webcam, maxPredictions;
-        let isRunning = false;
-        let predictionInterval = null;
-        let lastPrediction = null;
-        let lastAnnouncement = 0;
+          const video = document.getElementById("webcam");
+          const constraints = {
+            video: {
+              facingMode: "environment",
+              width: { ideal: 400 },
+              height: { ideal: 300 },
+            },
+          };
 
-        async function init() {
-  model = await tmImage.load(modelURL, metadataURL);
+          webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
+          video.srcObject = webcamStream;
 
-        // ============================================
-        // PASO 2: FUNCIÓN DE SÍNTESIS DE VOZ
-        // ============================================
-        
-        function speak(text) {
-            // Verifica si el navegador soporta síntesis de voz
-            if ('speechSynthesis' in window) {
-                // Cancela cualquier voz en reproducción
-                window.speechSynthesis.cancel();
-                
-                // Crea el mensaje de voz
-                const utterance = new SpeechSynthesisUtterance(text);
-                
-                // Configura el idioma
-                utterance.lang = 'es-ES'; // Español
-                utterance.rate = 0.9;     // Velocidad (0.1 a 10)
-                utterance.pitch = 1.0;    // Tono (0 a 2)
-                utterance.volume = 1.0;   // Volumen (0 a 1)
-                
-                // Reproduce el mensaje
-                window.speechSynthesis.speak(utterance);
-                
-                console.log('🔊 Anunciando:', text);
-            } else {
-                console.warn('⚠️ Tu navegador no soporta síntesis de voz');
-            }
+          labelContainer = document.getElementById("label-container");
+          labelContainer.innerHTML = "Cargando modelo...";
+
+          // Esperar a que se inicie el video antes de empezar la predicción
+          video.addEventListener("loadeddata", () => predictLoop(video));
+        } catch (err) {
+          console.error("Error al iniciar la cámara o cargar el modelo:", err);
+          alert(
+            "No se pudo acceder a la cámara. Revisa los permisos del navegador."
+          );
         }
+      }
 
-        // ============================================
-        // PASO 3: CARGAR EL MODELO
-        // ============================================
-        
-        async function loadModel() {
-            try {
-                console.log('📦 Cargando modelo...');
-                document.getElementById('loadingStatus').style.display = 'block';
-                
-                // Construye las URLs del modelo y metadata
-                const modelURL = MODEL_URL + "model.json";
-                const metadataURL = MODEL_URL + "metadata.json";
-                
-                // Carga el modelo de Teachable Machine
-                model = await tmImage.load(modelURL, metadataURL);
-                maxPredictions = model.getTotalClasses();
-                
-                console.log('✅ Modelo cargado exitosamente');
-                console.log(`📊 Número de clases: ${maxPredictions}`);
-                
-                document.getElementById('loadingStatus').style.display = 'none';
-                return true;
-                
-            } catch (error) {
-                console.error('❌ Error al cargar el modelo:', error);
-                document.getElementById('loadingStatus').innerHTML = 
-                    '❌ Error al cargar el modelo. Verifica la URL en el código.';
-                speak('Error al cargar el modelo de inteligencia artificial');
-                return false;
-            }
+      async function predictLoop(video) {
+        if (!model) return;
+        const prediction = await model.predict(video);
+        const highest = prediction.reduce((a, b) =>
+          a.probability > b.probability ? a : b
+        );
+        labelContainer.innerHTML =
+          "Resultado: " +
+          highest.className +
+          " (" +
+          (highest.probability * 100).toFixed(1) +
+          "%)";
+        requestAnimationFrame(() => predictLoop(video));
+      }
+
+      function stopCamera() {
+        if (webcamStream) {
+          webcamStream.getTracks().forEach((track) => track.stop());
+          webcamStream = null;
+          labelContainer.innerHTML = "Cámara detenida.";
         }
-
-        // ============================================
-        // PASO 4: INICIALIZAR CÁMARA Y SISTEMA
-        // ============================================
-        
-        async function init() {
-            console.log('🚀 Iniciando sistema...');
-            
-            // Deshabilita el botón de inicio
-            document.getElementById('startBtn').disabled = true;
-            
-            try {
-                // Cargar el modelo primero
-                const modelLoaded = await loadModel();
-                if (!modelLoaded) {
-                    document.getElementById('startBtn').disabled = false;
-                    return;
-                }
-                
-                // Configurar y acceder a la cámara
-                const video = document.getElementById('webcam');
-                const placeholder = document.getElementById('placeholder');
-                
-                // Solicita acceso a la cámara
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: 'environment', // Usa cámara trasera en móviles
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    }
-                });
-                
-                // Asigna el stream al elemento video
-                video.srcObject = stream;
-                video.style.display = 'block';
-                placeholder.style.display = 'none';
-                
-                // Espera a que el video esté listo
-                await new Promise(resolve => {
-                    video.onloadedmetadata = () => {
-                        video.play();
-                        resolve();
-                    };
-                });
-                
-                console.log('✅ Cámara iniciada');
-                speak('Cámara iniciada. Coloca el billete frente a la cámara.');
-                
-                // Actualiza estado
-                isRunning = true;
-                document.getElementById('statusIndicator').classList.add('active');
-                document.getElementById('stopBtn').disabled = false;
-                
-                // Inicia predicciones automáticas cada 2 segundos
-                predictionInterval = setInterval(() => {
-                    predict();
-                }, 2000);
-                
-            } catch (error) {
-                console.error('❌ Error al acceder a la cámara:', error);
-                speak('Error al acceder a la cámara. Por favor, verifica los permisos.');
-                alert('No se pudo acceder a la cámara. Asegúrate de permitir el acceso cuando tu navegador lo solicite.');
-                document.getElementById('startBtn').disabled = false;
-            }
-        }
-
-        // ============================================
-        // PASO 5: REALIZAR PREDICCIONES
-        // ============================================
-        
-        async function predict() {
-            if (!model || !isRunning) return;
-            
-            try {
-                const video = document.getElementById('webcam');
-                
-                // Realizar predicción sobre el frame actual
-                const prediction = await model.predict(video);
-                
-                // Encontrar la clase con mayor probabilidad
-                let maxProb = 0;
-                let maxClass = '';
-                
-                prediction.forEach(pred => {
-                    if (pred.probability > maxProb) {
-                        maxProb = pred.probability;
-                        maxClass = pred.className;
-                    }
-                });
-                
-                // Mostrar resultado en pantalla
-                displayResult(maxClass, maxProb);
-                
-                // Anunciar por voz si cumple condiciones
-                announceResult(maxClass, maxProb);
-                
-            } catch (error) {
-                console.error('❌ Error en predicción:', error);
-            }
-        }
-
-        // ============================================
-        // PASO 6: MOSTRAR RESULTADO EN PANTALLA
-        // ============================================
-        
-        function displayResult(className, confidence) {
-            const resultDisplay = document.getElementById('resultDisplay');
-            const confidencePercent = (confidence * 100).toFixed(1);
-            
-            // Determina el color según la confianza
-            let emoji = '';
-            let message = '';
-            
-            if (confidence > 0.70) {
-                emoji = '✅';
-                message = className;
-            } else if (confidence > 0.50) {
-                emoji = '⚠️';
-                message = 'Confianza baja';
-            } else {
-                emoji = '❌';
-                message = 'No identificado';
-            }
-            
-            resultDisplay.innerHTML = `
-                <p class="result-text">${emoji} ${message}</p>
-                <p class="confidence">Confianza: ${confidencePercent}%</p>
-            `;
-        }
-
-        // ============================================
-        // PASO 7: ANUNCIAR RESULTADO POR VOZ
-        // ============================================
-        
-        function announceResult(className, confidence) {
-            const now = Date.now();
-            const minInterval = 3000; // 3 segundos entre anuncios
-            
-            // Solo anuncia si:
-            // 1. Confianza mayor al 70%
-            // 2. Es diferente a la última predicción O han pasado 3+ segundos
-            if (confidence > 0.70) {
-                const isDifferent = className !== lastPrediction;
-                const timeElapsed = now - lastAnnouncement > minInterval;
-                
-                if (isDifferent || timeElapsed) {
-                    // Formatea el mensaje de forma natural
-                    let message = className.replace('Billete de ', '');
-                    message = `Billete de ${message}`;
-                    
-                    // Anuncia
-                    speak(message);
-                    
-                    // Actualiza control
-                    lastPrediction = className;
-                    lastAnnouncement = now;
-                    
-                    console.log(`📢 Anunciado: ${message} (${(confidence*100).toFixed(1)}%)`);
-                }
-            } else if (confidence > 0.50 && now - lastAnnouncement > minInterval * 2) {
-                // Si la confianza es media-baja, avisa cada 6 segundos
-                speak('No se puede identificar con claridad. Mejora la iluminación o acerca el billete.');
-                lastAnnouncement = now;
-            }
-        }
-
-        // ============================================
-        // PASO 8: DETENER EL SISTEMA
-        // ============================================
-        
-        function stop() {
-            console.log('⏹️ Deteniendo sistema...');
-            
-            try {
-                // Detener stream de video
-                const video = document.getElementById('webcam');
-                if (video.srcObject) {
-                    const tracks = video.srcObject.getTracks();
-                    tracks.forEach(track => track.stop());
-                    video.srcObject = null;
-                }
-                
-                // Ocultar video, mostrar placeholder
-                video.style.display = 'none';
-                document.getElementById('placeholder').style.display = 'block';
-                
-                // Detener predicciones automáticas
-                if (predictionInterval) {
-                    clearInterval(predictionInterval);
-                    predictionInterval = null;
-                }
-                
-                // Actualizar estado
-                isRunning = false;
-                document.getElementById('statusIndicator').classList.remove('active');
-                
-                // Actualizar botones
-                document.getElementById('startBtn').disabled = false;
-                document.getElementById('stopBtn').disabled = true;
-                
-                // Restablecer display
-                document.getElementById('resultDisplay').innerHTML = `
-                    <p class="waiting-text">
-                        <span class="status-indicator"></span>
-                        Sistema detenido
-                    </p>
-                `;
-                
-                speak('Sistema detenido');
-                console.log('✅ Sistema detenido correctamente');
-                
-            } catch (error) {
-                console.error('❌ Error al detener:', error);
-            }
-        }
-
-        // ============================================
-        // PASO 9: MENSAJE DE BIENVENIDA
-        // ============================================
-        
-        window.addEventListener('load', () => {
-            console.log('👋 Aplicación cargada');
-            speak('Bienvenido al identificador de billetes para personas con discapacidad visual. Presiona iniciar cámara para comenzar.');
-        });
-
-        // ============================================
-        // PASO 10: LIMPIAR AL CERRAR
-        // ============================================
-        
-        window.addEventListener('beforeunload', () => {
-            if (isRunning) {
-                stop();
-            }
-        });
-
-        // ============================================
-        // FUNCIONES ADICIONALES (TECLAS DE ATAJO)
-        // ============================================
-        
-        document.addEventListener('keydown', (e) => {
-            // Espacio o Enter: Iniciar/Detener
-            if (e.key === ' ' || e.key === 'Enter') {
-                e.preventDefault();
-                if (!isRunning) {
-                    init();
-                } else {
-                    stop();
-                }
-            }
-            
-            // Tecla 'I': Repetir instrucciones
-            if (e.key === 'i' || e.key === 'I') {
-                speak('Coloca el billete frente a la cámara con buena iluminación. Mantén el billete estable durante uno a dos segundos.');
-            }
-            
-            // Tecla 'H': Ayuda
-            if (e.key === 'h' || e.key === 'H') {
-                speak('Atajos de teclado. Espacio o Enter para iniciar o detener. I para instrucciones. H para ayuda.');
-            }
-        });
-
-        // ============================================
-        // LOGGING Y DEBUG
-        // ============================================
-        
-        console.log('='.repeat(50));
-        console.log('🚀 IDENTIFICADOR DE BILLETES - Sistema cargado');
-        console.log('='.repeat(50));
-        console.log('📋 Instrucciones:');
-        console.log('   1. Presiona "Iniciar Cámara"');
-        console.log('   2. Permite acceso a la cámara');
-        console.log('   3. Coloca un billete frente a la cámara');
-        console.log('   4. Escucha el resultado por voz');
-        console.log('');
-        console.log('⚠️  IMPORTANTE:');
-        console.log('   Debes reemplazar MODEL_URL con la URL de tu modelo');
-        console.log('   URL actual:', MODEL_URL);
-        console.log('='.repeat(50));
+      }
     </script>
-</body>
+  </body>
 </html>
-
